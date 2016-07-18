@@ -12,8 +12,15 @@ from .utils import promap
 
 
 class GeoPattern(object):
-    def __init__(self, string, generator=None):
+    def __init__(self, string, generator=None, color=None):
         self.hash = hashlib.sha1(string.encode('utf8')).hexdigest()
+        if color:
+            self.base_color = Color()
+            self.base_color.set_hex(color)
+            self.randomize_hue = False
+        else:
+            self.base_color = Color(hsl=(0, .42, .41))
+            self.randomize_hue = True
         self.svg = SVG()
 
         available_generators = [
@@ -47,8 +54,10 @@ class GeoPattern(object):
     def generate_background(self):
         hue_offset = promap(int(self.hash[14:][:3], 16), 0, 4095, 0, 359)
         sat_offset = int(self.hash[17:][:1], 16)
-        base_color = Color(hsl=(0, .42, .41))
-        base_color.hue = base_color.hue - hue_offset
+
+        base_color = self.base_color
+        if self.randomize_hue:
+            base_color.hue = base_color.hue - hue_offset
 
         if sat_offset % 2:
             base_color.saturation = base_color.saturation + sat_offset / 100
