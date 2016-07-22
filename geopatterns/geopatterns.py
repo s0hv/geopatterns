@@ -527,26 +527,32 @@ class GeoPattern(object):
                     rotation = 180 if x % 2 != 0 else 0
 
                 tmp_tri = str(triangle)
-                self.svg.polyline(tmp_tri, {
+                self.svg.polyline(tmp_tri, **{
                     'opacity': opacity,
                     'fill': fill,
                     'stroke': '#444',
                     'transform': 'translate({}, {}) rotate({}, {}, {})'.format(
-                        (x * side_length * 0.5 - side_length / 2), (triangle_height * y),
-                        rotation, (side_length / 2), (triangle_height / 2)
+                        (x * side_length * 0.5 - side_length / 2),
+                        (triangle_height * y),
+                        rotation,
+                        (side_length / 2),
+                        (triangle_height / 2)
                     )
                 })
 
                 # Add an extra one at top-right, for tiling.
                 if x == 0:
                     tmp_tri = str(triangle)
-                    self.svg.polyline(tmp_tri, {
+                    self.svg.polyline(tmp_tri, **{
                         'opacity': opacity,
                         'fill': fill,
                         'stroke': '#444',
                         'transform': 'translate({}, {}) rotate({}, {}, {})'.format(
-                            (6 * side_length * 0.5 - side_length / 2), (triangle_height * y),
-                            rotation, (side_length / 2), (triangle_height / 2)
+                            (6 * side_length * 0.5 - side_length / 2),
+                            (triangle_height * y),
+                            rotation,
+                            (side_length / 2),
+                            (triangle_height / 2)
                         )
                     })
 
