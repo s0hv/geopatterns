@@ -12,7 +12,17 @@ from .utils import promap
 
 
 class GeoPattern(object):
-    def __init__(self, string, generator=None, color=None, scale=None):
+    def __init__(self, string, generator=None, color=None, scale=None,
+                 opacity=1.0):
+        """
+        Generate a pattern
+
+        :param string:
+        :param generator:
+        :param color:
+        :param scale:
+        :param opacity:
+        """
         self.hash = hashlib.sha1(string.encode('utf8')).hexdigest()
         self.svg = SVG()
 
@@ -45,6 +55,7 @@ class GeoPattern(object):
         if scale is None:
             scale = int(self.hash[1:][:1], 16)
 
+
         self.generate_background(base_color, randomize_hue)
         getattr(self, 'geo_%s' % generator)(scale)
 
@@ -56,7 +67,7 @@ class GeoPattern(object):
     def base64_string(self):
         return base64.encodestring(self.svg.to_string()).replace('\n', '')
 
-    def generate_background(self, base_color, randomize_hue):
+    def generate_background(self, base_color, randomize_hue, opacity):
         hue_offset = promap(int(self.hash[14:][:3], 16), 0, 4095, 0, 359)
         sat_offset = int(self.hash[17:][:1], 16)
 
@@ -72,8 +83,9 @@ class GeoPattern(object):
         r = int(round(rgb[0] * 255))
         g = int(round(rgb[1] * 255))
         b = int(round(rgb[2] * 255))
+        a = int(round(promap(opacity, 0., 1., 0., 255.)))
         return self.svg.rect(0, 0, '100%', '100%', **{
-            'fill': 'rgb({}, {}, {})'.format(r, g, b)
+            'fill': 'rgba({}, {}, {}, {})'.format(r, g, b, a)
         })
 
     def geo_bricks(self, scale):
