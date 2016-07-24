@@ -55,7 +55,9 @@ class GeoPattern(object):
         if scale is None:
             scale = int(self.hash[1:][:1], 16)
 
-        self.generate_background(base_color, randomize_hue, opacity)
+        self.opacity = promap(opacity, 0., 1., 0., 1.)
+
+        self.generate_background(base_color, randomize_hue)
         getattr(self, 'geo_%s' % generator)(scale)
 
     @property
@@ -66,7 +68,7 @@ class GeoPattern(object):
     def base64_string(self):
         return base64.encodestring(self.svg.to_string()).replace('\n', '')
 
-    def generate_background(self, base_color, randomize_hue, opacity):
+    def generate_background(self, base_color, randomize_hue):
         hue_offset = promap(int(self.hash[14:][:3], 16), 0, 4095, 0, 359)
         sat_offset = int(self.hash[17:][:1], 16)
 
@@ -82,9 +84,8 @@ class GeoPattern(object):
         r = int(round(rgb[0] * 255))
         g = int(round(rgb[1] * 255))
         b = int(round(rgb[2] * 255))
-        a = int(round(promap(opacity, 0., 1., 0., 1.)))
         return self.svg.rect(0, 0, '100%', '100%', **{
-            'fill': 'rgba({}, {}, {}, {})'.format(r, g, b, a)
+            'fill': 'rgba({}, {}, {}, {})'.format(r, g, b, self.opacity)
         })
 
     def geo_bricks(self, scale):
@@ -99,7 +100,8 @@ class GeoPattern(object):
         for y in range(6):
             for x in range(6):
                 val = int(self.hash[i:][:1], 16)
-                opacity = promap(val, 0, 15, 0.02, 0.2)
+                opacity = promap(val, 0, 15, 0.02*self.opacity,
+                                 0.2*self.opacity)
                 fill = '#ddd' if val % 2 == 0 else '#222'
 
                 dx = -square_size if y % 2 == 0 else 0
@@ -149,7 +151,8 @@ class GeoPattern(object):
             for x in range(6):
                 val = int(self.hash[i:][:1], 16)
                 dy = (y * hex_height) if x % 2 else (y * hex_height + hex_height / 2)
-                opacity = promap(val, 0, 15, 0.02, 0.18)
+                opacity = promap(val, 0, 15, 0.02*self.opacity,
+                                 0.18*self.opacity)
                 fill = '#ddd' if val % 2 == 0 else '#222'
                 tmp_hex = str(hex)
 
@@ -213,7 +216,7 @@ class GeoPattern(object):
         for y in range(6):
             for x in range(6):
                 val = int(self.hash[i:][:1], 16)
-                opacity = promap(val, 0, 15, 0.02, 0.1)
+                opacity = promap(val, 0, 15, 0.02*self.opacity, 0.1*self.opacity)
                 fill = '#ddd' if val % 2 == 0 else '#222'
 
                 self.svg.circle(x * radius, y * radius, radius, **{
@@ -263,7 +266,7 @@ class GeoPattern(object):
         for y in range(6):
             for x in range(6):
                 val = int(self.hash[i:][:1], 16)
-                opacity = promap(val, 0, 15, 0.02, 0.16)
+                opacity = promap(val, 0, 15, 0.02*self.opacity, 0.16*self.opacity)
 
                 self.svg.circle(x * ring_size, y * ring_size, ring_size, **{
                         'fill': 'none',
@@ -324,7 +327,7 @@ class GeoPattern(object):
             height += space + 5
 
             val = int(self.hash[i + 1:][:1], 16)
-            opacity = promap(val, 0, 15, 0.02, 0.15)
+            opacity = promap(val, 0, 15, 0.02*self.opacity, 0.15*self.opacity)
             fill = '#ddd' if val % 2 == 0 else '#222'
             stripe_height = val + 5
 
@@ -370,7 +373,7 @@ class GeoPattern(object):
         for y in range(6):
             for x in range(6):
                 val = int(self.hash[i:][:1], 16)
-                opacity = promap(val, 0, 15, 0.02, 0.15)
+                opacity = promap(val, 0, 15, 0.02*self.opacity, 0.15*self.opacity)
                 fill = '#ddd' if val % 2 == 0 else '#222'
                 dx = 0 if y % 2 == 0 else 1
 
@@ -433,7 +436,7 @@ class GeoPattern(object):
         for y in range(6):
             for x in range(6):
                 val = int(self.hash[i:][:1], 16)
-                opacity = promap(val, 0, 15, 0.02, 0.16)
+                opacity = promap(val, 0, 15, 0.02*self.opacity, 0.16*self.opacity)
 
                 self.svg.circle(
                     x * ring_size + x * stroke_width + (ring_size + stroke_width) / 2,
@@ -461,7 +464,7 @@ class GeoPattern(object):
         for i in range(36):
             val = int(self.hash[i:][1], 16)
             fill = '#ddd' if val % 2 == 0 else '#222'
-            opacity = promap(val, 0, 15, 0.02, 0.15)
+            opacity = promap(val, 0, 15, 0.02*self.opacity, 0.15*self.opacity)
             x_offset = period / 4 * 0.7
 
             str = 'M0 {} C {} 0, {} 0, {} {} S {} {}, {} {} S {} 0, {}, {}'.format(
@@ -504,7 +507,7 @@ class GeoPattern(object):
         for y in range(6):
             for x in range(6):
                 val = int(self.hash[i:][:1], 16)
-                opacity = promap(val, 0, 15, 0.02, 0.2)
+                opacity = promap(val, 0, 15, 0.02*self.opacity, 0.2*self.opacity)
                 fill = '#ddd' if val % 2 == 0 else '#222'
 
                 self.svg.rect(x * square_size, y * square_size, square_size, square_size, **{
@@ -528,7 +531,7 @@ class GeoPattern(object):
         for y in range(6):
             for x in range(6):
                 val = int(self.hash[i:][:1], 16)
-                opacity = promap(val, 0, 15, 0.02, 0.15)
+                opacity = promap(val, 0, 15, 0.02*self.opacity, 0.15*self.opacity)
                 fill = '#ddd' if val % 2 == 0 else '#222'
 
                 rotation = ''
@@ -581,7 +584,7 @@ class GeoPattern(object):
         for y in range(6):
             for x in range(6):
                 val = int(self.hash[i:][:1], 16)
-                opacity = promap(val, 0, 15, 0.02, 0.15)
+                opacity = promap(val, 0, 15, 0.02*self.opacity, 0.15*self.opacity)
                 dy = (y * x_size - x_size * 0.5) if x % 2 == 0 else (y * x_size - x_size * 0.5 + x_size / 4)
                 fill = '#ddd' if val % 2 == 0 else '#222'
 
