@@ -55,8 +55,7 @@ class GeoPattern(object):
         if scale is None:
             scale = int(self.hash[1:][:1], 16)
 
-
-        self.generate_background(base_color, randomize_hue)
+        self.generate_background(base_color, randomize_hue, opacity)
         getattr(self, 'geo_%s' % generator)(scale)
 
     @property
