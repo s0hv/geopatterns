@@ -83,7 +83,7 @@ class GeoPattern(object):
         r = int(round(rgb[0] * 255))
         g = int(round(rgb[1] * 255))
         b = int(round(rgb[2] * 255))
-        a = int(round(promap(opacity, 0., 1., 0., 255.)))
+        a = int(round(promap(opacity, 0., 1., 0., 1.)))
         return self.svg.rect(0, 0, '100%', '100%', **{
             'fill': 'rgba({}, {}, {}, {})'.format(r, g, b, a)
         })
