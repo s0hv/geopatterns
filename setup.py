@@ -18,7 +18,7 @@ setup(
     long_description=open('README.md').read(),
     author='Bryan Veloso',
     author_email='bryan@revyver.com',
-    url='https://github.com/bryanveloso/geopatterns',
+    url='https://github.com/juiceinc/geopatterns',
     py_modules=['geopatterns'],
     install_requires=['colour'],
     license='MIT',
