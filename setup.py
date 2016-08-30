@@ -13,13 +13,13 @@ if sys.argv[-1] == 'publish':
 
 setup(
     name='geopatterns',
-    version='0.0.1',
+    version='0.0.2',
     description='Generative background images.',
     long_description=open('README.md').read(),
     author='Bryan Veloso',
     author_email='bryan@revyver.com',
     url='https://github.com/juiceinc/geopatterns',
     py_modules=['geopatterns'],
-    install_requires=['colour'],
+    install_requires=[],
     license='MIT',
 )
