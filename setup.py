@@ -3,7 +3,7 @@
 import os
 import sys
 
-from setuptools import setup
+from setuptools import setup, find_packages
 
 
 if sys.argv[-1] == 'publish':
@@ -22,4 +22,5 @@ setup(
     py_modules=['geopatterns'],
     install_requires=[],
     license='MIT',
+    packages=find_packages(),
 )
