@@ -45,11 +45,11 @@ class GeoPattern(object):
             ))
 
         if color:
-            base_color = Color()
-            base_color.set_web(color)
+            self.base_color = Color()
+            self.base_color.set_web(color)
             randomize_hue = False
         else:
-            base_color = Color(hsl=(0, .42, .41))
+            self.base_color = Color(hsl=(0, .42, .41))
             randomize_hue = True
 
         if scale is None:
@@ -57,7 +57,7 @@ class GeoPattern(object):
 
         self.opacity = promap(opacity, 0., 1., 0., 1.)
 
-        self.generate_background(base_color, randomize_hue)
+        self.generate_background(self.base_color, randomize_hue)
         getattr(self, 'geo_%s' % generator)(scale)
 
     @property
