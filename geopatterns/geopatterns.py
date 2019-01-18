@@ -5,7 +5,7 @@ import base64
 import hashlib
 import math
 
-from .colour import Color
+from colour import Color
 
 from .svg import SVG
 from .utils import promap
