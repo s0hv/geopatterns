@@ -5,14 +5,24 @@ import base64
 import hashlib
 import math
 
-from colour import Color
+from .colour import Color
 
 from .svg import SVG
 from .utils import promap
 
 
 class GeoPattern(object):
-    def __init__(self, string, generator=None):
+    def __init__(self, string, generator=None, color=None, scale=None,
+                 opacity=1.0):
+        """
+        Generate a pattern
+
+        :param string:
+        :param generator:
+        :param color:
+        :param scale:
+        :param opacity:
+        """
         self.hash = hashlib.sha1(string.encode('utf8')).hexdigest()
         self.svg = SVG()
 
@@ -33,8 +43,22 @@ class GeoPattern(object):
             raise ValueError('{} is not a valid generator. Valid choices are {}.'.format(
                 generator, ', '.join(['"{}"'.format(g) for g in available_generators])
             ))
-        self.generate_background()
-        getattr(self, 'geo_%s' % generator)()
+
+        if color:
+            self.base_color = Color()
+            self.base_color.set_web(color)
+            randomize_hue = False
+        else:
+            self.base_color = Color(hsl=(0, .42, .41))
+            randomize_hue = True
+
+        if scale is None:
+            scale = int(self.hash[1:][:1], 16)
+
+        self.opacity = promap(opacity, 0., 1., 0., 1.)
+
+        self.generate_background(self.base_color, randomize_hue)
+        getattr(self, 'geo_%s' % generator)(scale)
 
     @property
     def svg_string(self):
@@ -44,11 +68,12 @@ class GeoPattern(object):
     def base64_string(self):
         return base64.encodestring(self.svg.to_string()).replace('\n', '')
 
-    def generate_background(self):
+    def generate_background(self, base_color, randomize_hue):
         hue_offset = promap(int(self.hash[14:][:3], 16), 0, 4095, 0, 359)
         sat_offset = int(self.hash[17:][:1], 16)
-        base_color = Color(hsl=(0, .42, .41))
-        base_color.hue = base_color.hue - hue_offset
+
+        if randomize_hue:
+            base_color.hue = base_color.hue - hue_offset
 
         if sat_offset % 2:
             base_color.saturation = base_color.saturation + sat_offset / 100
@@ -60,11 +85,11 @@ class GeoPattern(object):
         g = int(round(rgb[1] * 255))
         b = int(round(rgb[2] * 255))
         return self.svg.rect(0, 0, '100%', '100%', **{
-            'fill': 'rgb({}, {}, {})'.format(r, g, b)
+            'fill': 'rgba({}, {}, {}, {})'.format(r, g, b, self.opacity)
         })
 
-    def geo_bricks(self):
-        square_size = promap(int(self.hash[1:][:1], 16), 0, 15, 6, 60)
+    def geo_bricks(self, scale):
+        square_size = promap(scale, 0, 15, 6, 60)
         brick_width = square_size * 2
         gap_size = square_size * 0.1
 
@@ -75,7 +100,8 @@ class GeoPattern(object):
         for y in range(6):
             for x in range(6):
                 val = int(self.hash[i:][:1], 16)
-                opacity = promap(val, 0, 15, 0.02, 0.2)
+                opacity = promap(val, 0, 15, 0.02*self.opacity,
+                                 0.2*self.opacity)
                 fill = '#ddd' if val % 2 == 0 else '#222'
 
                 dx = -square_size if y % 2 == 0 else 0
@@ -111,8 +137,7 @@ class GeoPattern(object):
 
                 i += 1
 
-    def geo_hexagons(self):
-        scale = int(self.hash[1:][:1], 16)
+    def geo_hexagons(self, scale):
         side_length = promap(scale, 0, 15, 5, 120)
         hex_height = side_length * math.sqrt(3)
         hex_width = side_length * 2
@@ -126,7 +151,8 @@ class GeoPattern(object):
             for x in range(6):
                 val = int(self.hash[i:][:1], 16)
                 dy = (y * hex_height) if x % 2 else (y * hex_height + hex_height / 2)
-                opacity = promap(val, 0, 15, 0.02, 0.18)
+                opacity = promap(val, 0, 15, 0.02*self.opacity,
+                                 0.18*self.opacity)
                 fill = '#ddd' if val % 2 == 0 else '#222'
                 tmp_hex = str(hex)
 
@@ -179,8 +205,7 @@ class GeoPattern(object):
 
                 i += 1
 
-    def geo_overlapping_circles(self):
-        scale = int(self.hash[1:][:1], 16)
+    def geo_overlapping_circles(self, scale):
         diameter = promap(scale, 0, 15, 20, 200)
         radius = diameter / 2
 
@@ -191,7 +216,7 @@ class GeoPattern(object):
         for y in range(6):
             for x in range(6):
                 val = int(self.hash[i:][:1], 16)
-                opacity = promap(val, 0, 15, 0.02, 0.1)
+                opacity = promap(val, 0, 15, 0.02*self.opacity, 0.1*self.opacity)
                 fill = '#ddd' if val % 2 == 0 else '#222'
 
                 self.svg.circle(x * radius, y * radius, radius, **{
@@ -230,8 +255,7 @@ class GeoPattern(object):
 
                 i += 1
 
-    def geo_overlapping_rings(self):
-        scale = int(self.hash[1:][:1], 16)
+    def geo_overlapping_rings(self, scale):
         ring_size = promap(scale, 0, 15, 5, 80)
         stroke_width = ring_size / 4
 
@@ -242,7 +266,7 @@ class GeoPattern(object):
         for y in range(6):
             for x in range(6):
                 val = int(self.hash[i:][:1], 16)
-                opacity = promap(val, 0, 15, 0.02, 0.16)
+                opacity = promap(val, 0, 15, 0.02*self.opacity, 0.16*self.opacity)
 
                 self.svg.circle(x * ring_size, y * ring_size, ring_size, **{
                         'fill': 'none',
@@ -292,7 +316,7 @@ class GeoPattern(object):
 
                 i += 1
 
-    def geo_plaid(self):
+    def geo_plaid(self, scale):
         height = 0
         width = 0
 
@@ -303,7 +327,7 @@ class GeoPattern(object):
             height += space + 5
 
             val = int(self.hash[i + 1:][:1], 16)
-            opacity = promap(val, 0, 15, 0.02, 0.15)
+            opacity = promap(val, 0, 15, 0.02*self.opacity, 0.15*self.opacity)
             fill = '#ddd' if val % 2 == 0 else '#222'
             stripe_height = val + 5
 
@@ -337,8 +361,8 @@ class GeoPattern(object):
         self.svg.width = width
         self.svg.height = height
 
-    def geo_plus_signs(self):
-        square_size = promap(int(self.hash[0:][:1], 16), 0, 15, 10, 25)
+    def geo_plus_signs(self, scale):
+        square_size = promap(scale, 0, 15, 10, 25)
         plus_size = square_size * 3
         plus_shape = self.build_plus_shape(square_size)
 
@@ -349,7 +373,7 @@ class GeoPattern(object):
         for y in range(6):
             for x in range(6):
                 val = int(self.hash[i:][:1], 16)
-                opacity = promap(val, 0, 15, 0.02, 0.15)
+                opacity = promap(val, 0, 15, 0.02*self.opacity, 0.15*self.opacity)
                 fill = '#ddd' if val % 2 == 0 else '#222'
                 dx = 0 if y % 2 == 0 else 1
 
@@ -401,8 +425,7 @@ class GeoPattern(object):
 
                 i += 1
 
-    def geo_rings(self):
-        scale = int(self.hash[1:][:1], 16)
+    def geo_rings(self, scale):
         ring_size = promap(scale, 0, 15, 5, 80)
         stroke_width = ring_size / 4
 
@@ -413,7 +436,7 @@ class GeoPattern(object):
         for y in range(6):
             for x in range(6):
                 val = int(self.hash[i:][:1], 16)
-                opacity = promap(val, 0, 15, 0.02, 0.16)
+                opacity = promap(val, 0, 15, 0.02*self.opacity, 0.16*self.opacity)
 
                 self.svg.circle(
                     x * ring_size + x * stroke_width + (ring_size + stroke_width) / 2,
@@ -430,8 +453,8 @@ class GeoPattern(object):
 
                 i += 1
 
-    def geo_sinewaves(self):
-        period = math.floor(promap(int(self.hash[1:][:1], 16), 0, 15, 100, 400))
+    def geo_sinewaves(self, scale):
+        period = math.floor(promap(scale, 0, 15, 100, 400))
         amplitude = math.floor(promap(int(self.hash[2:][:1], 16), 0, 15, 30, 100))
         wave_width = math.floor(promap(int(self.hash[3:][:1], 16), 0, 15, 3, 30))
 
@@ -441,7 +464,7 @@ class GeoPattern(object):
         for i in range(36):
             val = int(self.hash[i:][1], 16)
             fill = '#ddd' if val % 2 == 0 else '#222'
-            opacity = promap(val, 0, 15, 0.02, 0.15)
+            opacity = promap(val, 0, 15, 0.02*self.opacity, 0.15*self.opacity)
             x_offset = period / 4 * 0.7
 
             str = 'M0 {} C {} 0, {} 0, {} {} S {} {}, {} {} S {} 0, {}, {}'.format(
@@ -474,8 +497,8 @@ class GeoPattern(object):
                 }
             })
 
-    def geo_squares(self):
-        square_size = promap(int(self.hash[0:][:1], 16), 0, 15, 10, 70)
+    def geo_squares(self, scale):
+        square_size = promap(scale, 0, 15, 10, 70)
 
         self.svg.width = square_size * 6
         self.svg.height = square_size * 6
@@ -484,7 +507,7 @@ class GeoPattern(object):
         for y in range(6):
             for x in range(6):
                 val = int(self.hash[i:][:1], 16)
-                opacity = promap(val, 0, 15, 0.02, 0.2)
+                opacity = promap(val, 0, 15, 0.02*self.opacity, 0.2*self.opacity)
                 fill = '#ddd' if val % 2 == 0 else '#222'
 
                 self.svg.rect(x * square_size, y * square_size, square_size, square_size, **{
@@ -496,8 +519,7 @@ class GeoPattern(object):
 
                 i += 1
 
-    def geo_triangles(self):
-        scale = int(self.hash[1:][:1], 16)
+    def geo_triangles(self, scale):
         side_length = promap(scale, 0, 15, 5, 120)
         triangle_height = side_length / 2 * math.sqrt(3)
         triangle = self.build_triangle_shape(side_length, triangle_height)
@@ -509,7 +531,7 @@ class GeoPattern(object):
         for y in range(6):
             for x in range(6):
                 val = int(self.hash[i:][:1], 16)
-                opacity = promap(val, 0, 15, 0.02, 0.15)
+                opacity = promap(val, 0, 15, 0.02*self.opacity, 0.15*self.opacity)
                 fill = '#ddd' if val % 2 == 0 else '#222'
 
                 rotation = ''
@@ -519,33 +541,39 @@ class GeoPattern(object):
                     rotation = 180 if x % 2 != 0 else 0
 
                 tmp_tri = str(triangle)
-                self.svg.polyline(tmp_tri, {
+                self.svg.polyline(tmp_tri, **{
                     'opacity': opacity,
                     'fill': fill,
                     'stroke': '#444',
                     'transform': 'translate({}, {}) rotate({}, {}, {})'.format(
-                        (x * side_length * 0.5 - side_length / 2), (triangle_height * y),
-                        rotation, (side_length / 2), (triangle_height / 2)
+                        (x * side_length * 0.5 - side_length / 2),
+                        (triangle_height * y),
+                        rotation,
+                        (side_length / 2),
+                        (triangle_height / 2)
                     )
                 })
 
                 # Add an extra one at top-right, for tiling.
                 if x == 0:
                     tmp_tri = str(triangle)
-                    self.svg.polyline(tmp_tri, {
+                    self.svg.polyline(tmp_tri, **{
                         'opacity': opacity,
                         'fill': fill,
                         'stroke': '#444',
                         'transform': 'translate({}, {}) rotate({}, {}, {})'.format(
-                            (6 * side_length * 0.5 - side_length / 2), (triangle_height * y),
-                            rotation, (side_length / 2), (triangle_height / 2)
+                            (6 * side_length * 0.5 - side_length / 2),
+                            (triangle_height * y),
+                            rotation,
+                            (side_length / 2),
+                            (triangle_height / 2)
                         )
                     })
 
                 i += 1
 
-    def geo_xes(self):
-        square_size = promap(int(self.hash[0:][:1], 16), 0, 15, 10, 25)
+    def geo_xes(self, scale):
+        square_size = promap(scale, 0, 15, 10, 25)
         x_shape = self.build_plus_shape(square_size)
         x_size = square_size * 3 * 0.943
 
@@ -556,7 +584,7 @@ class GeoPattern(object):
         for y in range(6):
             for x in range(6):
                 val = int(self.hash[i:][:1], 16)
-                opacity = promap(val, 0, 15, 0.02, 0.15)
+                opacity = promap(val, 0, 15, 0.02*self.opacity, 0.15*self.opacity)
                 dy = (y * x_size - x_size * 0.5) if x % 2 == 0 else (y * x_size - x_size * 0.5 + x_size / 4)
                 fill = '#ddd' if val % 2 == 0 else '#222'
 
